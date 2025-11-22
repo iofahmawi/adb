@@ -29,7 +29,6 @@
             overflow: visible; 
         }
         
-        /* التعديل: جعلنا الهامش السفلي 0 لنتحكم بالمسافة من العنصر التالي بدقة */
         h1 { text-align: center; color: #2563eb; margin-top: 0; margin-bottom: 0; font-size: 1.8rem; width: 100%; }
 
         /* ============================================================
@@ -77,31 +76,42 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* زر التبديل (Switch) */
-        /* التعديل هنا: 25px من الأعلى والأسفل بالضبط */
+        /* زر التبديل (Switch) - تم التعديل هنا */
         .toggle-container { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    
-    /* هذا الرقم (30px) هو المسافة فوق الجملة - غيره كما تشاء */
-    margin-top: 16px; 
-    
-    /* هذا الرقم (25px) هو المسافة تحت الجملة */
-    margin-bottom: 28px; 
-    
-    gap: 10px; 
-    padding: 0; 
-    border: none;
-}
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-top: 16px; 
+            margin-bottom: 28px; 
+            gap: 10px; 
+            padding: 0; 
+            border: none;
+        }
         
         .toggle-label { font-size: 0.9rem; font-weight: 600; color: #4b5563; cursor: pointer; }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
+        
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        /* التعديل: جعل الدائرة تبدأ من اليمين (right: 3px) بدلاً من اليسار */
+        .slider:before { 
+            position: absolute; 
+            content: ""; 
+            height: 18px; 
+            width: 18px; 
+            right: 3px; /* البداية من اليمين */
+            bottom: 3px; 
+            background-color: white; 
+            transition: .3s; 
+            border-radius: 50%; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+        }
+        
         input:checked + .slider { background-color: #2563eb; }
-        input:checked + .slider:before { transform: translateX(20px); }
+        
+        /* التعديل: التحريك لليسار بقيمة سالبة (-20px) */
+        input:checked + .slider:before { transform: translateX(-20px); }
 
         /* عناصر النموذج */
         .form-group { margin-bottom: 18px; position: relative; }
@@ -187,10 +197,8 @@
         
         .custom-option { position: relative; display: block; padding: 12px 20px; font-size: 0.95rem; color: #3b3b3b; cursor: pointer; }
         
-        /* إزالة تأثير اللمس */
         .custom-option:hover { background-color: #ffffff !important; color: #3b3b3b !important; }
         
-        /* العنصر المختار */
         .custom-option.selected { background-color: #2563eb !important; color: #fff !important; }
         .custom-option.selected:hover { background-color: #2563eb !important; color: #fff !important; }
         
