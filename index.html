@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولد أوامر ADB</title>
+    <style>
+        /* إعدادات الصفحة العامة */
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f3f4f6; 
+            color: #1f2937; 
+            margin: 0; 
+            display: block; 
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+
+        .container { 
+            background-color: #ffffff; 
+            width: 100%; 
+            max-width: 600px; 
+            padding: 30px; 
+            border-radius: 25px; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); 
+            margin: 0 auto; 
+            overflow: visible; 
+        }
+        
+        /* التعديل: جعلنا الهامش السفلي 0 لنتحكم بالمسافة من العنصر التالي بدقة */
+        h1 { text-align: center; color: #2563eb; margin-top: 0; margin-bottom: 0; font-size: 1.8rem; width: 100%; }
+
+        /* ============================================================
+           تصميم التبويبات (Tabs)
+           ============================================================ */
+        .tabs-nav {
+            display: flex;
+            background-color: #f1f5f9;
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #64748b;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background-color: #ffffff;
+            color: #2563eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* زر التبديل (Switch) */
+        /* التعديل هنا: 25px من الأعلى والأسفل بالضبط */
+        .toggle-container { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    
+    /* هذا الرقم (30px) هو المسافة فوق الجملة - غيره كما تشاء */
+    margin-top: 16px; 
+    
+    /* هذا الرقم (25px) هو المسافة تحت الجملة */
+    margin-bottom: 28px; 
+    
+    gap: 10px; 
+    padding: 0; 
+    border: none;
+}
+        
+        .toggle-label { font-size: 0.9rem; font-weight: 600; color: #4b5563; cursor: pointer; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: #2563eb; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* عناصر النموذج */
+        .form-group { margin-bottom: 18px; position: relative; }
+        label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: #4b5563; }
+
+        /* الحقول والقوائم */
+        input[type="text"], 
+        .custom-select__trigger {
+            width: 100%;
+            height: 54px;
+            padding: 0 20px;
+            border: 2px solid #f3f4f6;
+            border-radius: 15px;
+            background-color: #f9fafb;
+            color: #3b3b3b;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: border-color 0.2s ease;
+            outline: none;
+        }
+
+        input[type="text"] { font-family: 'Consolas', 'Monaco', monospace; direction: ltr; text-align: left; }
+        .custom-select__trigger { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        /* التركيز (بدون توهج) */
+        input[type="text"]:focus,
+        .custom-select.open .custom-select__trigger {
+            border-color: #2563eb !important;
+            background-color: #ffffff !important;
+            box-shadow: none !important;
+            z-index: 5;
+        }
+
+        input[type="text"]:hover, .custom-select__trigger:hover { border-color: #cbd5e1; }
+
+        .other-input { display: none; margin-top: 10px; }
+
+        /* القائمة المنسدلة المخصصة */
+        select { display: none; } 
+        .custom-select-wrapper { position: relative; user-select: none; width: 100%; }
+        .custom-select { position: relative; display: flex; flex-direction: column; }
+        .arrow { position: relative; height: 7px; width: 7px; margin-right: 5px; }
+        .arrow::before, .arrow::after { content: ""; position: absolute; bottom: 0px; width: 2px; height: 100%; transition: all 0.2s; background-color: #6b7280; }
+        .arrow::before { left: -2px; transform: rotate(-45deg); }
+        .arrow::after { left: 2px; transform: rotate(45deg); }
+        .custom-select.open .arrow::before { transform: rotate(-135deg); }
+        .custom-select.open .arrow::after { transform: rotate(135deg); }
+        
+        .custom-options { 
+            position: absolute; 
+            display: block; 
+            top: 100%; 
+            left: 0; 
+            right: 0; 
+            background: #fff; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); 
+            margin-top: 8px; 
+            border: 1px solid #f1f5f9; 
+            opacity: 0; 
+            visibility: hidden; 
+            pointer-events: none; 
+            transform: translateY(-10px); 
+            transition: all 0.2s cubic-bezier(0.5, 0, 0, 1.25); 
+            z-index: 9999; 
+            overflow: hidden; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+
+        .custom-select.open-up .custom-options {
+            top: auto;
+            bottom: 100%; 
+            margin-top: 0;
+            margin-bottom: 8px;
+            transform: translateY(10px); 
+        }
+        
+        .custom-options::-webkit-scrollbar { display: none; }
+        .custom-select.open .custom-options { opacity: 1; visibility: visible; pointer-events: all; transform: translateY(0); }
+        
+        .custom-option { position: relative; display: block; padding: 12px 20px; font-size: 0.95rem; color: #3b3b3b; cursor: pointer; }
+        
+        /* إزالة تأثير اللمس */
+        .custom-option:hover { background-color: #ffffff !important; color: #3b3b3b !important; }
+        
+        /* العنصر المختار */
+        .custom-option.selected { background-color: #2563eb !important; color: #fff !important; }
+        .custom-option.selected:hover { background-color: #2563eb !important; color: #fff !important; }
+        
+        /* مربع النتائج */
+        .result-box { background-color: #1e293b; color: #10b981; padding: 16px; border-radius: 15px; font-family: 'Consolas', monospace; font-size: 0.9rem; margin-top: 20px; word-break: break-all; display: flex; align-items: center; justify-content: space-between; direction: ltr; box-shadow: inset 0 2px 5px rgba(0,0,0,0.3); }
+        .copy-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-left: 10px; white-space: nowrap; transition: transform 0.1s, background 0.2s; }
+        .copy-btn:hover { background-color: #1d4ed8; }
+        .copy-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>مولد أوامر ADB</h1>
+
+    <!-- زر التبديل العام -->
+    <div class="toggle-container">
+        <span class="toggle-label" onclick="document.getElementById('adbMode').click()">إزالة "adb shell" (لبعض التطبيقات)</span>
+        <label class="switch">
+            <input type="checkbox" id="adbMode" onchange="updateCommands()">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <!-- شريط التبويبات -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('localeTab')">تغيير اللغة والدولة</button>
+        <button class="tab-btn" onclick="switchTab('appTab')">اتجاه التطبيقات</button>
+    </div>
+
+    <!-- محتوى التبويب الأول: اللغة والدولة -->
+    <div id="localeTab" class="tab-content active">
+        <div class="form-group">
+            <label>أولاً: اختر الدولة</label>
+            <select id="country" class="native-select">
+                <option value="SA">المملكة العربية السعودية</option>
+                <option value="AE">الإمارات العربية المتحدة</option>
+                <option value="EG">مصر</option>
+                <option value="JO">الأردن</option>
+                <option value="QA">قطر</option>
+                <option value="KW">الكويت</option>
+                <option value="BH">البحرين</option>
+                <option value="OM">سلطنة عمان</option>
+                <option value="YE">اليمن</option>
+                <option value="IQ">العراق</option>
+                <option value="SY">سوريا</option>
+                <option value="LB">لبنان</option>
+                <option value="PS">فلسطين</option>
+                <option value="DZ">الجزائر</option>
+                <option value="MA">المغرب</option>
+                <option value="TN">تونس</option>
+                <option value="LY">ليبيا</option>
+                <option value="SD">السودان</option>
+                <option value="MR">موريتانيا</option>
+                <option value="SO">الصومال</option>
+                <option value="DJ">جيبوتي</option>
+                <option value="KM">جزر القمر</option>
+                
+                <!-- الدول الأجنبية -->
+                <option value="US">الولايات المتحدة الأمريكية</option>
+                <option value="CA">كندا</option>
+                <option value="GB">المملكة المتحدة</option>
+                <option value="FR">فرنسا</option>
+                <option value="DE">ألمانيا</option>
+                <option value="NL">هولندا</option>
+                <option value="SE">السويد</option>
+                <option value="AU">أستراليا</option>
+                
+                <option value="other">أخرى</option>
+            </select>
+            <input type="text" id="otherCountry" class="other-input" placeholder="e.g. KR (South Korea)" oninput="updateCommands()">
+        </div>
+
+        <div class="form-group">
+            <label>ثانياً: اختر اللغة</label>
+            <select id="language" class="native-select">
+                <option value="ar">العربية</option>
+                <option value="en">الإنجليزية</option>
+                <option value="fr">الفرنسية</option>
+                <option value="de">الألمانية</option>
+                <option value="es">الإسبانية</option>
+                <option value="other">أخرى</option>
+            </select>
+            <input type="text" id="otherLanguage" class="other-input" placeholder="e.g. ko (Korean)" oninput="updateCommands()">
+        </div>
+
+        <div class="form-group">
+            <label>ثالثاً: نمط الأرقام</label>
+            <select id="digits" class="native-select">
+                <option value="default">الافتراضي (حسب النظام)</option>
+                <option value="latn">أرقام غربية (1234)</option>
+                <option value="arab">أرقام مشرقية (١٢٣٤)</option>
+            </select>
+        </div>
+
+        <div class="result-box">
+            <span id="localeCommand">...</span>
+            <button class="copy-btn" onclick="copyToClipboard('localeCommand')">نسخ</button>
+        </div>
+    </div>
+
+    <!-- محتوى التبويب الثاني: اتجاه التطبيقات -->
+    <div id="appTab" class="tab-content">
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px; line-height: 1.6;">
+            هذا الخيار يقوم بإجبار تطبيق معين على العمل باللغة الإنجليزية (en-US) مما يؤدي لتحويل واجهته لليسار (LTR). 
+            <br><strong>ملاحظة:</strong> يعمل فقط على أندرويد 13 فما فوق.
+        </p>
+        
+        <div class="form-group">
+            <label for="packageName">اسم حزمة التطبيق (Package Name):</label>
+            <input type="text" id="packageName" placeholder="e.g. com.facebook.katana" oninput="updateCommands()">
+        </div>
+
+        <div class="result-box">
+            <span id="appCommand">...</span>
+            <button class="copy-btn" onclick="copyToClipboard('appCommand')">نسخ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        document.getElementById(tabId).classList.add('active');
+        
+        const btns = document.querySelectorAll('.tab-btn');
+        if(tabId === 'localeTab') btns[0].classList.add('active');
+        if(tabId === 'appTab') btns[1].classList.add('active');
+    }
+
+    function setupCustomSelects() {
+        const selects = document.querySelectorAll('.native-select');
+        selects.forEach(select => {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('custom-select-wrapper');
+            const customSelect = document.createElement('div');
+            customSelect.classList.add('custom-select');
+
+            if (select.id === 'digits') {
+                customSelect.classList.add('open-up');
+            }
+
+            const trigger = document.createElement('div');
+            trigger.classList.add('custom-select__trigger');
+            trigger.innerHTML = `<span>${select.options[select.selectedIndex].text}</span> <div class="arrow"></div>`;
+            const customOptions = document.createElement('div');
+            customOptions.classList.add('custom-options');
+            
+            Array.from(select.options).forEach(option => {
+                const div = document.createElement('div');
+                div.classList.add('custom-option');
+                div.textContent = option.text;
+                div.setAttribute('data-value', option.value);
+                if(option.selected) div.classList.add('selected');
+                
+                div.addEventListener('click', function() {
+                    select.value = this.getAttribute('data-value');
+                    trigger.querySelector('span').textContent = this.textContent;
+                    customOptions.querySelectorAll('.custom-option').forEach(op => op.classList.remove('selected'));
+                    this.classList.add('selected');
+                    customSelect.classList.remove('open');
+                    
+                    if (select.id === 'country') {
+                        const input = document.getElementById('otherCountry');
+                        if (select.value === 'other') {
+                            input.style.display = 'block';
+                            setTimeout(() => input.focus(), 50);
+                        } else {
+                            input.style.display = 'none';
+                        }
+                    }
+                    if (select.id === 'language') {
+                        const input = document.getElementById('otherLanguage');
+                        if (select.value === 'other') {
+                            input.style.display = 'block';
+                            setTimeout(() => input.focus(), 50);
+                        } else {
+                            input.style.display = 'none';
+                        }
+                    }
+
+                    updateCommands();
+                });
+                customOptions.appendChild(div);
+            });
+            
+            customSelect.appendChild(trigger);
+            customSelect.appendChild(customOptions);
+            wrapper.appendChild(customSelect);
+            select.parentNode.insertBefore(wrapper, select);
+            
+            trigger.addEventListener('click', function() {
+                document.querySelectorAll('.custom-select').forEach(s => { if(s !== customSelect) s.classList.remove('open'); });
+                customSelect.classList.toggle('open');
+                
+                if(customSelect.classList.contains('open')) {
+                   const selectedOption = customOptions.querySelector('.selected');
+                   if(selectedOption) {
+                       customOptions.scrollTop = selectedOption.offsetTop;
+                   }
+                }
+            });
+        });
+        window.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-select')) {
+                document.querySelectorAll('.custom-select').forEach(s => { s.classList.remove('open'); });
+            }
+        });
+    }
+
+    function updateCommands() {
+        const removeAdb = document.getElementById('adbMode').checked;
+        const prefix = removeAdb ? "" : "adb shell ";
+
+        let lang = document.getElementById('language').value;
+        if (lang === 'other') {
+            lang = document.getElementById('otherLanguage').value.trim();
+        }
+
+        let country = document.getElementById('country').value;
+        if (country === 'other') {
+            country = document.getElementById('otherCountry').value.trim();
+        }
+
+        if (!lang) lang = "LANG";
+        if (!country) country = "COUNTRY";
+
+        const digits = document.getElementById('digits').value;
+        let localeString = `${lang}-${country}`;
+        if (digits === 'latn') localeString += '-u-nu-latn';
+        else if (digits === 'arab') localeString += '-u-nu-arab';
+        
+        const cmd1 = `${prefix}settings put system system_locales ${localeString}`;
+        document.getElementById('localeCommand').innerText = cmd1;
+
+        let pkg = document.getElementById('packageName').value.trim();
+        if (!pkg) pkg = "PACKAGENAME";
+        
+        const cmd2 = `${prefix}cmd locale set-app-locales ${pkg} --locales en-US`;
+        document.getElementById('appCommand').innerText = cmd2;
+    }
+
+    function copyToClipboard(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(() => {}).catch(err => {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        });
+    }
+
+    window.onload = function() {
+        setupCustomSelects();
+        updateCommands();
+    };
+</script>
+</body>
+</html>
