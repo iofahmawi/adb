@@ -213,17 +213,15 @@
         .copy-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-left: 10px; white-space: nowrap; transition: transform 0.1s, background 0.2s; }
         .copy-btn:hover { background-color: #1d4ed8; }
         .copy-btn:active { transform: scale(0.95); }
-        
-        /* ... أضف هذا الكود في نهاية وسم <style> ... */
 
 /* استهداف وضع التطبيق (PWA) فقط */
 @media all and (display-mode: standalone) {
     .container {
         /* لإنزال الحاوية نصف سنتيمتر مع الحفاظ على التوسط */
-        margin-top: 0.4cm !important; 
+        margin-top: 0.2cm !important; 
         
         /* حل إضافي: في حال وجود "نوتش" أو كاميرا في الشاشة، يفضل استخدام هذا السطر بدلاً من السطر السابق لضمان عدم تغطية المحتوى */
-        /* margin-top: calc(0.4cm + env(safe-area-inset-top)) !important; */
+        /* margin-top: calc(0.2cm + env(safe-area-inset-top)) !important; */
     }
 }
     </style>
