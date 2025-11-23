@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adb-generator-v5'; // اسم التخزين المؤقت وإصداره
+const CACHE_NAME = 'adb-generator-v6'; // اسم التخزين المؤقت وإصداره
 const ASSETS_TO_CACHE = [
   './',                // الصفحة الرئيسية
   './index.html',      // اسم ملف HTML الخاص بك
