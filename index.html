@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مولد أوامر ADB</title>
     
-    <meta name="theme-color" content="#f3f4f6">
+    <meta name="theme-color" content="#FFFFFF">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-1440.png">
   <link rel="apple-touch-icon" href="icon-1440.png">
@@ -37,9 +37,9 @@
         
         h1 { text-align: center; color: #2563eb; margin-top: 0; margin-bottom: 0; font-size: 1.8rem; width: 100%; }
 
-        /* ===========================================================
+        /* ============================================================
            تصميم التبويبات (Tabs)
-           =========================================================== */
+           ============================================================ */
         .tabs-nav {
             display: flex;
             background-color: #f1f5f9;
@@ -213,6 +213,19 @@
         .copy-btn { background-color: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-size: 0.85rem; font-weight: bold; margin-left: 10px; white-space: nowrap; transition: transform 0.1s, background 0.2s; }
         .copy-btn:hover { background-color: #1d4ed8; }
         .copy-btn:active { transform: scale(0.95); }
+        
+        /* ... أضف هذا الكود في نهاية وسم <style> ... */
+
+/* استهداف وضع التطبيق (PWA) فقط */
+@media all and (display-mode: standalone) {
+    .container {
+        /* لإنزال الحاوية نصف سنتيمتر مع الحفاظ على التوسط */
+        margin-top: 0.5cm !important; 
+        
+        /* حل إضافي: في حال وجود "نوتش" أو كاميرا في الشاشة، يفضل استخدام هذا السطر بدلاً من السطر السابق لضمان عدم تغطية المحتوى */
+        /* margin-top: calc(0.5cm + env(safe-area-inset-top)) !important; */
+    }
+}
     </style>
 </head>
 <body>
