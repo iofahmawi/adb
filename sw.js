@@ -1,55 +1,66 @@
-const CACHE_NAME = 'adb-generator-v8'; // اسم التخزين المؤقت وإصداره
-const ASSETS_TO_CACHE = [
-  './',                // الصفحة الرئيسية
-  './index.html',      // اسم ملف HTML الخاص بك
-  './manifest.json',   // ملف المانيفست
-  './icon-1440.png'    // الأيقونة التي ذكرتها في الكود
+// sw.js - ADB Generator (Dynamic Version)
+
+const CACHE_NAME = 'adb-generator-dynamic-v3';
+
+// نخزن فقط ملف الواجهة لضمان نجاح التثبيت فوراً
+const urlsToCache = [
+  './',
+  'index.html',
+  'manifest.json'
 ];
 
-// 1. تثبيت الـ Service Worker وتخزين الملفات
-self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing Service Worker ...');
+self.addEventListener('install', event => {
+  self.skipWaiting(); // تفعيل التحديث فوراً
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[Service Worker] Caching all: app shell and content');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Service Worker: Caching critical files');
+        return cache.addAll(urlsToCache);
+      })
   );
-  // فرض التفعيل الفوري للخدمة الجديدة
-  self.skipWaiting();
 });
 
-// 2. تفعيل الـ Service Worker وتنظيف التخزين القديم
-self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating Service Worker ....');
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((keyList) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[Service Worker] Removing old cache.', key);
-            return caches.delete(key);
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName); // حذف الكاش القديم
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  // السماح للـ Service Worker بالتحكم في الصفحة فوراً
-  return self.clients.claim();
 });
 
-// 3. استراتيجية الجلب (Cache first, then Network)
-// محاولة جلب الملف من الذاكرة، إذا لم يوجد، جلبه من الإنترنت
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      // إذا وجد الملف في الكاش، قم بإرجاعه
-      if (response) {
-        return response;
-      }
-      // إذا لم يوجد، قم بطلبه من الشبكة
-      return fetch(event.request);
-    })
-  );
+    caches.match(event.request)
+      .then(cachedResponse => {
+        // 1. إذا وجدنا الملف في الكاش، نرجعه فوراً
+        if (cachedResponse) {
+          return cachedResponse;
+        }
 
+        // 2. إذا لم نجده، نطلبه من الشبكة
+        return fetch(event.request).then(networkResponse => {
+          // التحقق من صحة الاستجابة
+          if (!networkResponse || networkResponse.status !== 200 || (networkResponse.type !== 'basic' && networkResponse.type !== 'cors')) {
+            return networkResponse;
+          }
+
+          // 3. تخزين النسخة الجديدة في الكاش للمستقبل (للأيقونات وغيرها)
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            if (event.request.method === 'GET' && !event.request.url.startsWith('chrome-extension')) {
+                cache.put(event.request, responseToCache);
+            }
+          });
+
+          return networkResponse;
+        });
+      })
+  );
 });
